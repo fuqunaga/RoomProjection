@@ -38,4 +38,10 @@ public class CameraSwitcher : MonoBehaviour
 		_firstPersonCamera.enabled = _firstPersonCamera == cam;
         _control.m_Cam = cam.transform;
 	}
+
+    public void Menu()
+    {
+        GUILayout.Label("CameraMode:");
+        _mode = (Mode)GUILayout.SelectionGrid((int)_mode, System.Enum.GetNames(typeof(Mode)), 2);
+    }
 }
