@@ -56,13 +56,17 @@ public class Room : MonoBehaviour
         return _faceDatas;
     }
 
-    void Start()
+    public Dictionary<Face, GameObject> faces { get; protected set; } = new Dictionary<Face, GameObject>();
+
+    void Awake()
     {
         var center = Vector3.up * _size.y * 0.5f + transform.position;
         GetFaceDatas().ForEach(data =>
         {
             var go = GameObject.CreatePrimitive(PrimitiveType.Quad);
             go.name = data.face.ToString();
+
+            faces[data.face] = go;
 
             var trans = go.transform;
             trans.SetParent(transform);

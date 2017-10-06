@@ -6,11 +6,13 @@ public class CameraGenerator : MonoBehaviour
 {
     public Transform _eyePoint;
     public int _cameraDepth = -10;
+    public float _positionOffsetForDebug;
+    public Vector2 _texSize = new Vector2(1024, 1024);
 
     Room _room;
     Dictionary<Room.Face, Camera> _faceToCamera = new Dictionary<Room.Face, Camera>();
 
-    #region Unity
+#region Unity
     void Start()
     {
         _room = FindObjectOfType<Room>();
@@ -21,8 +23,13 @@ public class CameraGenerator : MonoBehaviour
             trans.SetParent(transform);
             trans.rotation = Room.FaceToRot(data.face);
 
-            var camera = go.GetComponent<Camera>();
-            _faceToCamera[data.face] = camera;
+            var cam = go.GetComponent<Camera>();
+            _faceToCamera[data.face] = cam;
+
+            var tex = new RenderTexture((int)_texSize.x, (int)_texSize.y, 24);
+            cam.targetTexture = tex;
+
+            _room.faces[data.face].GetComponent<Renderer>().material.mainTexture = tex;
         });
     }
 
@@ -30,14 +37,14 @@ public class CameraGenerator : MonoBehaviour
     {
         var eyePointRoomLocal = _room.transform.InverseTransformPoint(_eyePoint.position);
 
-		_room.GetFaceDatas().ForEach(data =>
+        _room.GetFaceDatas().ForEach(data =>
         {
-            UpdateCamera(_faceToCamera[data.face], data, eyePointRoomLocal);
+            UpdateCamera(_faceToCamera[data.face], data, eyePointRoomLocal, _positionOffsetForDebug);
         });
     }
-    #endregion
+#endregion
 
-    void UpdateCamera(Camera camera, Room.FaceData faceData, Vector3 eyePointRoomLocal)
+    void UpdateCamera(Camera camera, Room.FaceData faceData, Vector3 eyePointRoomLocal, float positionOffsetForDebug = 0f)
     {
         camera.depth = _cameraDepth;
         camera.ResetProjectionMatrix();
@@ -61,5 +68,10 @@ public class CameraGenerator : MonoBehaviour
         projectionMatrix[1,2] = shift.y;
 
         camera.projectionMatrix = projectionMatrix;
-    }
+
+
+        // 作図用にカメラの位置をずらして、シーンビューで視錐台を分離して表示する
+		var trans = camera.transform;
+		trans.position = transform.position + trans.forward * positionOffsetForDebug;
+	}
 }
