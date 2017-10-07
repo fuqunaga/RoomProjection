@@ -65,6 +65,7 @@ public class Room : MonoBehaviour
         {
             var go = GameObject.CreatePrimitive(PrimitiveType.Quad);
             go.name = data.face.ToString();
+            go.layer = gameObject.layer;
 
             faces[data.face] = go;
 

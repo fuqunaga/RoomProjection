@@ -5,6 +5,7 @@ using UnityEngine;
 public class CameraGenerator : MonoBehaviour
 {
     public Transform _eyePoint;
+    public float _eyePointToWorldScale = 100f;
     public int _cameraDepth = -10;
     public float _positionOffsetForDebug;
     public Vector2 _texSize = new Vector2(1024, 1024);
@@ -41,6 +42,8 @@ public class CameraGenerator : MonoBehaviour
         {
             UpdateCamera(_faceToCamera[data.face], data, eyePointRoomLocal, _positionOffsetForDebug);
         });
+
+        UpdateWorldCameraPos(eyePointRoomLocal);
     }
 #endregion
 
@@ -54,7 +57,7 @@ public class CameraGenerator : MonoBehaviour
 		camera.aspect = faceSize.x / faceSize.y;
 
         // 画角を求める
-		var positionOffset = Quaternion.Inverse(Room.FaceToRot(faceData.face)) * eyePointRoomLocal;
+		var positionOffset = Quaternion.Inverse(Room.FaceToRot(faceData.face)) * -eyePointRoomLocal;
 		var distance = faceData.distance + positionOffset.z;
         camera.fieldOfView = 2f * Mathf.Atan2(faceSize.y * 0.5f, distance) * Mathf.Rad2Deg;
 
@@ -74,4 +77,10 @@ public class CameraGenerator : MonoBehaviour
 		var trans = camera.transform;
 		trans.position = transform.position + trans.forward * positionOffsetForDebug;
 	}
+
+
+	void UpdateWorldCameraPos(Vector3 eyePointRoomLocal)
+    {
+        transform.localPosition = eyePointRoomLocal * _eyePointToWorldScale;
+    }
 }

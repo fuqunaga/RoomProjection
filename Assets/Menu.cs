@@ -13,6 +13,9 @@ public class Menu : MonoBehaviour {
 
     private void OnGUI()
     {
-        _cameraSwitcher.Menu();
+        GUILayout.Label("Move: WASD,↑←↓→");
+        GUILayout.Label("Jump: Space");
+
+		_cameraSwitcher.Menu();
     }
 }
