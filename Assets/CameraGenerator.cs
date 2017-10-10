@@ -1,86 +1,88 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
-public class CameraGenerator : MonoBehaviour
+namespace RoomProjection
 {
-    public Transform _eyePoint;
-    public float _eyePointToWorldScale = 100f;
-    public int _cameraDepth = -10;
-    public float _positionOffsetForDebug;
-    public Vector2 _texSize = new Vector2(1024, 1024);
-
-    Room _room;
-    Dictionary<Room.Face, Camera> _faceToCamera = new Dictionary<Room.Face, Camera>();
-
-#region Unity
-    void Start()
+    public class CameraGenerator : MonoBehaviour
     {
-        _room = FindObjectOfType<Room>();
-        _room.GetFaceDatas().ForEach(data =>
+        public Transform _eyePoint;
+        public float _eyePointToWorldScale = 100f;
+        public int _cameraDepth = -10;
+        public float _positionOffsetForDebug;
+        public Vector2 _texSize = new Vector2(1024, 1024);
+
+        Room _room;
+        Dictionary<Room.Face, Camera> _faceToCamera = new Dictionary<Room.Face, Camera>();
+
+        #region Unity
+        void Start()
         {
-            var go = new GameObject(data.face.ToString(), typeof(Camera));
-            var trans = go.transform;
-            trans.SetParent(transform);
-            trans.rotation = Room.FaceToRot(data.face);
+            _room = FindObjectOfType<Room>();
+            _room.GetFaceDatas().ForEach(data =>
+            {
+                var go = new GameObject(data.face.ToString(), typeof(Camera));
+                var trans = go.transform;
+                trans.SetParent(transform);
+                trans.rotation = Room.FaceToRot(data.face);
 
-            var cam = go.GetComponent<Camera>();
-            _faceToCamera[data.face] = cam;
+                var cam = go.GetComponent<Camera>();
+                _faceToCamera[data.face] = cam;
 
-            var tex = new RenderTexture((int)_texSize.x, (int)_texSize.y, 24);
-            cam.targetTexture = tex;
+                var tex = new RenderTexture((int)_texSize.x, (int)_texSize.y, 24);
+                cam.targetTexture = tex;
 
-            _room.faces[data.face].GetComponent<Renderer>().material.mainTexture = tex;
-        });
-    }
+                _room.faces[data.face].GetComponent<Renderer>().material.mainTexture = tex;
+            });
+        }
 
-    private void Update()
-    {
-        var eyePointRoomLocal = _room.transform.InverseTransformPoint(_eyePoint.position);
-
-        _room.GetFaceDatas().ForEach(data =>
+        private void Update()
         {
-            UpdateCamera(_faceToCamera[data.face], data, eyePointRoomLocal, _positionOffsetForDebug);
-        });
+            var eyePointRoomLocal = _room.transform.InverseTransformPoint(_eyePoint.position);
 
-        UpdateWorldCameraPos(eyePointRoomLocal);
-    }
-#endregion
+            _room.GetFaceDatas().ForEach(data =>
+            {
+                UpdateCamera(_faceToCamera[data.face], data, eyePointRoomLocal, _positionOffsetForDebug);
+            });
 
-    void UpdateCamera(Camera camera, Room.FaceData faceData, Vector3 eyePointRoomLocal, float positionOffsetForDebug = 0f)
-    {
-        camera.depth = _cameraDepth;
-        camera.ResetProjectionMatrix();
+            UpdateWorldCameraPos(eyePointRoomLocal);
+        }
+        #endregion
 
-        // アスペクト比を求める
-        var faceSize = faceData.size;
-		camera.aspect = faceSize.x / faceSize.y;
+        void UpdateCamera(Camera camera, Room.FaceData faceData, Vector3 eyePointRoomLocal, float positionOffsetForDebug = 0f)
+        {
+            camera.depth = _cameraDepth;
+            camera.ResetProjectionMatrix();
 
-        // 画角を求める
-		var positionOffset = Quaternion.Inverse(Room.FaceToRot(faceData.face)) * -eyePointRoomLocal;
-		var distance = faceData.distance + positionOffset.z;
-        camera.fieldOfView = 2f * Mathf.Atan2(faceSize.y * 0.5f, distance) * Mathf.Rad2Deg;
+            // アスペクト比を求める
+            var faceSize = faceData.size;
+            camera.aspect = faceSize.x / faceSize.y;
 
-        // farClipPlaneをセット
-        camera.farClipPlane = distance * 1000f;
+            // 画角を求める
+            var positionOffset = Quaternion.Inverse(Room.FaceToRot(faceData.face)) * -eyePointRoomLocal;
+            var distance = faceData.distance + positionOffset.z;
+            camera.fieldOfView = 2f * Mathf.Atan2(faceSize.y * 0.5f, distance) * Mathf.Rad2Deg;
 
-        // レンズシフト
-        var shift = new Vector2(positionOffset.x / faceSize.x, positionOffset.y / faceSize.y) * 2f;
-        var projectionMatrix = camera.projectionMatrix;
-        projectionMatrix[0,2] = shift.x;
-        projectionMatrix[1,2] = shift.y;
+            // farClipPlaneをセット
+            camera.farClipPlane = distance * 1000f;
 
-        camera.projectionMatrix = projectionMatrix;
+            // レンズシフト
+            var shift = new Vector2(positionOffset.x / faceSize.x, positionOffset.y / faceSize.y) * 2f;
+            var projectionMatrix = camera.projectionMatrix;
+            projectionMatrix[0, 2] = shift.x;
+            projectionMatrix[1, 2] = shift.y;
 
-
-        // 作図用にカメラの位置をずらして、シーンビューで視錐台を分離して表示する
-		var trans = camera.transform;
-		trans.position = transform.position + trans.forward * positionOffsetForDebug;
-	}
+            camera.projectionMatrix = projectionMatrix;
 
 
-	void UpdateWorldCameraPos(Vector3 eyePointRoomLocal)
-    {
-        transform.localPosition = eyePointRoomLocal * _eyePointToWorldScale;
+            // 作図用にカメラの位置をずらして、シーンビューで視錐台を分離して表示する
+            var trans = camera.transform;
+            trans.position = transform.position + trans.forward * positionOffsetForDebug;
+        }
+
+
+        void UpdateWorldCameraPos(Vector3 eyePointRoomLocal)
+        {
+            transform.localPosition = eyePointRoomLocal * _eyePointToWorldScale;
+        }
     }
 }
